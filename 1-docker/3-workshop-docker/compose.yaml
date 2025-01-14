@@ -16,6 +16,27 @@ services:
       MYSQL_USER: root
       MYSQL_PASSWORD: secret
       MYSQL_DB: todos
+    # Exemple de dépendance simple pour l'ordre de démarrage 
+    # depends_on:
+    #   - mysql
+    # Exemple de dépendance maîtrisée pour l'ordre de démarrage
+    depends_on:
+      mysql:
+        condition: service_healthy
+        restart: true
+    deploy:
+      resources:
+        limits:
+          cpus: '1' # x cores available 
+          memory: 50M
+        reservations:
+          cpus: '0.25'
+          memory: 20M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
 
   mysql:
     image: mysql:8.0
@@ -24,6 +45,30 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_DATABASE: todos
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
+      start_period: 10s # adapt start_period 
+      timeout: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 50M
+        reservations:
+          cpus: '0.25'
+          memory: 20M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    logging:
+      driver: json-file # voir si driver SNMP  
+      options:
+        max-size: 10m
+        max-file: 3
         
 volumes:
   todo-mysql-data:
