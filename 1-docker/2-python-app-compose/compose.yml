@@ -1,0 +1,82 @@
+# version property is legacy (just FYI)
+# version: 3
+
+# containers
+services:
+  redis:
+    image: public.ecr.aws/docker/library/redis:alpine3.20
+    # healthcheck for depends_on if needed
+    # healthcheck:
+    #   test: ["executable", "arg"]
+    #   interval: 1m30s
+    #   timeout: 30s
+    #   retries: 5
+    #   start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 50M
+        # reservations 
+      restart_policy:
+        condition: on-failure
+        # delay etc.. 
+    networks:
+      pythonappredis:
+        aliases: # hostnames for network 
+          - redis
+          - db
+    logging:
+      driver: "json-file" # use other / custom drivers  (possible to config avec daemon.json)
+      options:
+        max-size: "10M"
+        max-file: 10
+  
+  app:
+    image: pythonappredis
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    # classic depends on 
+    # depends_on: # dependencies start order 
+    #  - redis
+    # complete depends_on
+    depends_on:
+      redis:
+        condition: service_started # or service healthy... 
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 50M
+        reservations:
+          cpus: '0.25'
+          memory: 20M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    healthcheck:
+      test: ["CMD" , "curl", "http://127.0.0.1:5000"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    ports:
+      # <port host> : <port container>  
+      - 5000:5000
+    networks:
+      - pythonappredis
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100M"
+        max-file: 10
+
+# declarations des networks
+networks:
+  pythonappredis: # créé et géré par compose
+    # external: true => créé et géré manuellement (docker network create ...)
+      
+  
