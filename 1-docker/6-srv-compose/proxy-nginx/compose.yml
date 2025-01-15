@@ -1,0 +1,23 @@
+version: '3.7'
+services:
+  reverse-proxy:
+    image: nginx # /!\ preciser la version x:alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 0.0.0.0:8080:80
+    networks:
+      - public
+    # if want "auto reload / watch on nginx.conf changes"  
+    # develop:
+    #   watch:
+    #     - path: ./nginx.conf
+    #       action: sync+restart
+networks:
+  public:
+    external: true
+  # if we want compose to create the network it's possible 
+  # /!\ but we need to start this compose before others  
+  # (so it can create the network first)
+  # public:
+  #  name: public

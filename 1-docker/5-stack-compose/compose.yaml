@@ -1,0 +1,134 @@
+# version: 3
+services:
+  app1:
+    hostname: app1
+    image: node:18-alpine
+    #  build: 
+    #   context: '.'
+    #   dockerfile
+    command: sh -c "yarn install && yarn run dev"
+    # exposition seulement via le proxy 
+    # ports:
+    #   - 127.0.0.1:3000:3000
+    working_dir: /app
+    volumes:
+      - ./app1/:/app
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: ${MYSQL_ROOT_USER} 
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD} 
+      MYSQL_DB: ${MYSQL_DATABASE} 
+    # Exemple de dépendance simple pour l'ordre de démarrage 
+    # depends_on:
+    #   - mysql
+    # Exemple de dépendance maîtrisée pour l'ordre de démarrage
+    depends_on:
+      mysql:
+        condition: service_healthy
+        restart: true
+    deploy:
+      resources:
+        limits:
+          cpus: '1' # x cores available 
+          memory: 50M
+        reservations:
+          cpus: '0.25'
+          memory: 20M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    networks: 
+     - net-app1
+     - public
+  
+  mysql:
+    hostname: mysql # explicit hostname 
+    image: mysql:8.0
+    volumes:
+      - app1-mysql-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} 
+      MYSQL_DATABASE: ${MYSQL_DATABASE} 
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
+      start_period: 10s # adapt start_period 
+      timeout: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 128M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    logging:
+      driver: json-file # voir si driver SNMP  
+      options:
+        max-size: 10m
+        max-file: 3
+    networks: 
+     - net-app1
+     # we can also specify a specific network alias  
+  
+  pma:
+    hostname: pma
+    image: phpmyadmin/phpmyadmin 
+    # only for direct access => prefer proxy in our case    
+    # ports:
+    #   - 0.0.0.0:8082:80
+    environment:
+      - PMA_HOST=mysql
+      - PMA_ABSOLUTE_URI=http://localhost:8080/pma/
+    networks:
+      - net-app1
+      - public   
+  
+  app2:
+    hostname: app2
+    image: traefik/whoami
+    # exposition seulement via le proxy 
+    # ports:
+    #   - 8081:80
+    networks: 
+     - net-app2
+     - public
+  
+  reverse-proxy:
+    image: nginx # /!\ preciser la version x:alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 0.0.0.0:8080:80
+    depends_on:
+      - app1
+      - app2
+      - pma
+    networks:
+      - public
+    # if want "auto reload / watch on nginx.conf changes"  
+    # develop:
+    #   watch:
+    #     - path: ./nginx.conf
+    #       action: sync+restart
+
+volumes:
+  app1-mysql-data:
+
+networks:
+  net-app1:
+    name: net-app1
+  net-app2:
+    name: net-app2
+  public:
+    name: public
+    # external: true # => si creation manuelle du reseau (docker network create...)
+      

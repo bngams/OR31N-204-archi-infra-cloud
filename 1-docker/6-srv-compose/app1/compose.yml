@@ -1,0 +1,83 @@
+services:
+  app:
+    hostname: app1
+    image: node:20.18.0-alpine3.20
+    command: sh -c "yarn install && yarn run dev"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    # we can comment port exposure if we want only acces with rev. proxy
+    # (or keep local access) 
+    ports:
+      - 127.0.0.1:8081:3000   
+    working_dir: /app
+    volumes:
+      - ./:/app
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DB: ${MYSQL_DATABASE}
+    networks:
+      - public
+      - net_app1
+    restart: unless-stopped  # Redémarrer toujours le conteneur en cas d'échec
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'  # Limite de CPU à 0.5 unité
+          memory: '512M'  # Limite de mémoire à 512 Mo
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app1.rule=PathPrefix(`/app1`)"
+  mysql:
+    image: mysql:8.0
+    healthcheck:
+      # mysql >_  mysqladmin ping -h localhost
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+    volumes:
+      - todo-mysql-data:/var/lib/mysql
+    env_file:
+      - .env
+    networks:
+      - net_app1
+    restart: unless-stopped  # Redémarrer toujours le conteneur en cas d'échec
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'  # Limite de CPU à 0.5 unité
+          memory: '512M'  # Limite de mémoire à 512 Mo
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+  # for the fun only (DO NOT EXPOSE DB ON PROD ENVS) 
+  pma:
+    image: phpmyadmin # change image 
+    restart: unless-stopped
+    # we can comment port exposure if we want only acces with rev. proxy
+    # (or keep local access) 
+    ports:
+      - 127.0.0.1:8082:80
+    environment:
+      # - PMA_ARBITRARY=1
+      PMA_HOST: ${MYSQL_HOST}
+    networks:
+      - net_app1
+
+volumes:
+  todo-mysql-data:
+
+networks:
+  # internal by compose
+  net_app1: 
+    name: net_app1
+  # external => must be created outside compose
+  public:
+    external: true

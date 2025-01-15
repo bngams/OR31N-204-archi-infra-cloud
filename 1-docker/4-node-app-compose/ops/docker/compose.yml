@@ -8,7 +8,7 @@ services:
     hostname: node-app
     image: my-node-app
     build:
-      context: . # le contexte est le dossier courant (commande compose) 
+      context: . # le contexte est le dossier courant (commande) 
       dockerfile: ops/docker/Dockerfile
     environment:
       - PUBLIC_PORT=${PUBLIC_PORT}

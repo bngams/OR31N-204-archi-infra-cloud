@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+  reverse-proxy:
+    # The official v3 Traefik docker image
+    image: traefik:v3
+    # Enables the web UI and tells Traefik to listen to docker
+    # CLI options for traefik:
+    #  https://doc.traefik.io/traefik/v3.0/reference/static-configuration/cli/ 
+    command:
+      - "--api.insecure=true" 
+      # - "--api.dashboard=true"
+      # - "--api.dashboard.entrypoints=dashboard"
+      - "--providers.docker"
+      - "--providers.docker.exposedbydefault=false"
+      - "--log.level=DEBUG"
+    ports:
+      # The HTTP port
+      - "8080:80"
+      # The Web UI (enabled by --api.insecure=true || api.dashboard=true)
+      - "5000:8080"
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - public
+    labels:
+      - "traefik.enable=true"
+      # Define middleware IP Whitelist
+      # - "traefik.http.middlewares.main-whitelist.ipwhitelist.sourcerange=78.124.119.169" # ip in env file... 
+      # Attach middleware
+      # - "traefik.http.routers.dashboard.middlewares=main-whitelist"
+
+networks:
+  public:
+    external: true
