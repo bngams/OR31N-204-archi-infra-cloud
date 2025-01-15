@@ -1,7 +1,9 @@
 # syntax=docker/dockerfile:1
 
-FROM node:lts-alpine
+# specify version 
+FROM node:22-alpine3.21
 WORKDIR /app
+# cache opti
 COPY package.json .
 RUN yarn install --production
 COPY . .

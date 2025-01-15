@@ -1,10 +1,8 @@
-# version: 3
+version: '3.8'
+
 services:
   app:
     image: node:18-alpine
-    #  build: 
-    #   context: '.'
-    #   dockerfile
     command: sh -c "yarn install && yarn run dev"
     ports:
       - 127.0.0.1:3000:3000
@@ -13,62 +11,54 @@ services:
       - ./:/app
     environment:
       MYSQL_HOST: mysql
-      MYSQL_USER: root
-      MYSQL_PASSWORD: secret
-      MYSQL_DB: todos
-    # Exemple de dépendance simple pour l'ordre de démarrage 
-    # depends_on:
-    #   - mysql
-    # Exemple de dépendance maîtrisée pour l'ordre de démarrage
-    depends_on:
-      mysql:
-        condition: service_healthy
-        restart: true
+      MYSQL_USER: ${MYSQL_ROOT_USER} 
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD} 
+      MYSQL_DB: ${MYSQL_DATABASE} 
+    networks:
+      - app-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     deploy:
       resources:
         limits:
-          cpus: '1' # x cores available 
-          memory: 50M
-        reservations:
-          cpus: '0.25'
-          memory: 20M
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
-        window: 120s
+          cpus: '0.50'
+          memory: '512M'
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   mysql:
     image: mysql:8.0
     volumes:
       - todo-mysql-data:/var/lib/mysql
     environment:
-      MYSQL_ROOT_PASSWORD: secret
-      MYSQL_DATABASE: todos
-    healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
-      interval: 10s
-      retries: 5
-      start_period: 10s # adapt start_period 
-      timeout: 10s
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} 
+      MYSQL_DATABASE: ${MYSQL_DATABASE} 
+    networks:
+      - app-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     deploy:
       resources:
         limits:
           cpus: '0.50'
-          memory: 50M
-        reservations:
-          cpus: '0.25'
-          memory: 20M
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
-        window: 120s
-    logging:
-      driver: json-file # voir si driver SNMP  
-      options:
-        max-size: 10m
-        max-file: 3
-        
+          memory: '512M'
+    restart: always
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
 volumes:
   todo-mysql-data:
+
+networks:
+  app-network:
