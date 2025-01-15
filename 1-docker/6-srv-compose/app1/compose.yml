@@ -34,7 +34,9 @@ services:
         max-file: '3'
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.app1.rule=PathPrefix(`/app1`)"
+      - "traefik.docker.network=public"
+      - "traefik.http.routers.app1.rule=Host(`app1.docker.local`)"
+      # - "traefik.http.routers.app1.rule=PathPrefix(`/app1`)"
   mysql:
     image: mysql:8.0
     healthcheck:

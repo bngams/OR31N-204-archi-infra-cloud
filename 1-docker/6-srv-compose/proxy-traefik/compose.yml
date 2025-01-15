@@ -16,7 +16,7 @@ services:
       - "--log.level=DEBUG"
     ports:
       # The HTTP port
-      - "8080:80"
+      - "80:80"
       # The Web UI (enabled by --api.insecure=true || api.dashboard=true)
       - "5000:8080"
     volumes:

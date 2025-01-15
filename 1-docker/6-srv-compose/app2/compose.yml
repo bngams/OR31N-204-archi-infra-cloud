@@ -3,8 +3,8 @@ services:
   app2:
     # hostname: app2 => or with networks aliases
     image: traefik/whoami
-    ports:
-      - 127.0.0.1:8083:80 # not used after proxy
+    # ports:
+    #   - 127.0.0.1:8083:80 # not used after proxy
     networks:
       public:
         aliases:
@@ -15,7 +15,8 @@ services:
       - "traefik.docker.network=public"
       # traefik.http.routers => creer une de routage http
       # traefik.http.routers.<name> => name = nom de la règle
-      - "traefik.http.routers.app2.rule=PathPrefix(`/app2`)"
+      - "traefik.http.routers.app2.rule=Host(`app2.docker.local`)"
+      # - "traefik.http.routers.app2.rule=PathPrefix(`/app2`)"
       # Define middleware IP Whitelist
       # - "traefik.http.middlewares.app2-whitelist.ipwhitelist.sourcerange=78.124.119.169"
       # Attach middleware 
