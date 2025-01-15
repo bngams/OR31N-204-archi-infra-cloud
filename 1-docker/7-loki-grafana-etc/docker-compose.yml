@@ -1,0 +1,75 @@
+version: '3.8'
+
+
+services:
+  nginx-app-promtail:
+    container_name: nginx-app-promtail
+    image: nginx
+    ports:
+      - 8084:80
+    networks:
+      - obs
+      - web
+    labels:
+      logging: "promtail"
+      logging_jobname: "containerlogs"
+ 
+  nginx-app-promtail-alpha:
+    container_name: nginx-app-promtail-alpha
+    image: nginx
+    ports:
+      - 8086:80
+    networks:
+      - obs
+      - web
+    labels:
+      logging: "promtail"
+      logging_jobname: "containerlogs"
+      # labels traefik instead of ports....
+
+  # dependency: plugin loki driver
+  
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - 3003:3000
+    volumes:
+      - ./config/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      # testing mode without account...
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    networks:
+      - obs
+      - web
+    # labels:
+    # - expose with traefik instead ports...
+
+  loki:
+    hostname: loki
+    image: grafana/loki:latest
+    ports:
+      - 3100:3100
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - obs
+
+  promtail:
+    image:  grafana/promtail:latest
+    container_name: promtail
+    volumes:
+      - ./config/promtail.yaml:/etc/promtail/docker-config.yaml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: -config.file=/etc/promtail/docker-config.yaml
+    depends_on:
+      - loki
+    networks:
+      - obs
+
+networks:
+  obs:
+    name: obs
+  web:
+    name: web
