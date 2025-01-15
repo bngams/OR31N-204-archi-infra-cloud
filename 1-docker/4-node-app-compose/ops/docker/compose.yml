@@ -1,0 +1,28 @@
+# Ce fichier remplace ces commandes:
+# docker build -t my-node-app -f ops/docker/Dockerfile .
+# docker run -p 8080:80 --name=app
+
+# liste des containers
+services:
+  myapp:
+    hostname: node-app
+    image: my-node-app
+    build:
+      context: . # le contexte est le dossier courant (commande compose) 
+      dockerfile: ops/docker/Dockerfile
+    environment:
+      - PUBLIC_PORT=${PUBLIC_PORT}
+    ports:
+      - 8080:${PUBLIC_PORT} 
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: '512M'
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
