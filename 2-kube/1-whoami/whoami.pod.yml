@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: whoami
+  name: whoami
+  labels:
+    name: whoami
+spec:
+  containers:
+  - name: whoami
+    image: traefik/whoami
+    resources:
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+    ports:
+      - containerPort: 80
