@@ -1,0 +1,3 @@
+# Very simple WP on Kube
+/!\ This example is to show only the basics with: namespaces, pods, services, ingress.
+We're not dealing yet with more complex specs like volumes, deployements/stateful sets...
