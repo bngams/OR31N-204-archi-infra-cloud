@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: whoami
+  labels:
+    name: whoami
+spec:
+  # DEPLOYEMENT / REPLICAS
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: whoami
+  replicas: 3
+  # POD TEMPLATE 
+  template:
+    metadata:
+      labels:
+        app: whoami
+        version: v2
+    spec:
+      containers:
+      - name: whoami
+        image: traefik/whoami
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 80
