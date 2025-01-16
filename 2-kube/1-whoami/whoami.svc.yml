@@ -6,8 +6,7 @@ metadata:
 spec:
   selector:
     name: whoami
-  type: NodePort
+  type: ClusterIP
   ports:
   - port: 80 # service port 
     targetPort: 80 # port on the pod 
-    nodePort: 30080 # port on the node
